@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart' as gmaps;
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/parking_provider.dart';
@@ -13,12 +12,12 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
-  late MapController mapController;
+  gmaps.GoogleMapController? _gMapController;
 
   @override
   void initState() {
     super.initState();
-    mapController = MapController();
+    // No flutter_map controller when using Google Maps only
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<ParkingProvider>(context, listen: false).loadSpots();
     });
@@ -26,7 +25,8 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   void dispose() {
-    mapController.dispose();
+    _gMapController?.dispose();
+    _gMapController?.dispose();
     super.dispose();
   }
 
@@ -49,41 +49,29 @@ class _MapScreenState extends State<MapScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Bản đồ bãi xe')),
-      body: FlutterMap(
-        mapController: mapController,
-        options: MapOptions(
-          center: LatLng(10.776530, 106.700981),
+      body: gmaps.GoogleMap(
+        initialCameraPosition: const gmaps.CameraPosition(
+          target: gmaps.LatLng(10.77653, 106.700981),
           zoom: 13.0,
         ),
-        children: [
-          TileLayer(
-            urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-            subdomains: const ['a', 'b', 'c'],
-          ),
-          if (spots.isNotEmpty)
-            MarkerLayer(
-              markers: _buildMarkers(spots),
-            ),
-        ],
+        onMapCreated: (ctrl) => _gMapController = ctrl,
+        markers: _buildGMarkers(spots),
       ),
     );
   }
 
-  List<Marker> _buildMarkers(List<dynamic> spots) {
-    return spots.map<Marker>((spot) {
-      return Marker(
-        point: LatLng(spot.lat as double, spot.lng as double),
-        width: 40,
-        height: 40,
-        builder: (ctx) => GestureDetector(
-          onTap: () => _onMarkerTapped(spot),
-          child: Icon(
-            Icons.location_on,
-            color: spot.isAvailable == true ? Colors.green : Colors.red,
-            size: 36,
-          ),
+  Set<gmaps.Marker> _buildGMarkers(List<dynamic> spots) {
+    return spots.map<gmaps.Marker>((spot) {
+      final id = gmaps.MarkerId(spot.id?.toString() ?? '${spot.lat}-${spot.lng}');
+      return gmaps.Marker(
+        markerId: id,
+        position: gmaps.LatLng(spot.lat as double, spot.lng as double),
+        infoWindow: gmaps.InfoWindow(
+          title: spot.name?.toString() ?? '',
+          snippet: spot.isAvailable == true ? 'Trống' : 'Đã đặt',
         ),
+        onTap: () => _onMarkerTapped(spot),
       );
-    }).toList();
+    }).toSet();
   }
 }

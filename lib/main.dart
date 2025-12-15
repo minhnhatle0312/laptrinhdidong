@@ -6,6 +6,7 @@ import 'router.dart';
 import 'firebase_options.dart';
 import 'providers/providers.dart';
 import 'services/api_service.dart';
+import 'utils/firebase_init_sample_data.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,6 +16,12 @@ void main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+    // Initialize sample data on first launch
+    try {
+      await FirebaseInitSampleData.initializeAll();
+    } catch (e) {
+      debugPrint('Sample data initialization warning: $e');
+    }
   } catch (e) {
     debugPrint('Firebase initialization error: $e');
   }
