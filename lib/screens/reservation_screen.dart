@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart'; // THÊM IMPORT
 import '../models/parking_spot.dart';
 import '../providers/parking_provider.dart';
 import '../providers/vehicles_provider.dart';
@@ -31,7 +32,12 @@ class _ReservationScreenState extends State<ReservationScreen> {
   }
 
   Future<void> _confirm() async {
-    if (_selectedVehicleId == null) return;
+    if (_selectedVehicleId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vui lòng chọn xe')),
+      );
+      return;
+    }
     setState(() => _processing = true);
 
     final parkingProvider = Provider.of<ParkingProvider>(
@@ -44,92 +50,82 @@ class _ReservationScreenState extends State<ReservationScreen> {
     );
 
     final amount = widget.spot.pricePerHour * _hours;
-    try {
-      // create payment (mock or real based on ApiService)
-      final paymentOk = await parkingProvider.api.createPayment(amount, 'cash');
-      final txId = DateTime.now().millisecondsSinceEpoch.toString();
-      
-      if (!paymentOk) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Thanh toán thất bại!')),
-        );
-        return;
-      }
 
-      // reserve spot
+    // SỬA: Dùng GoRouter context.push để chuyển sang màn hình Payment
+    final paymentResult = await context.push<Map<String, dynamic>>(
+      '/payment',
+      extra: {'amount': amount}, // Truyền số tiền qua 'extra'
+    );
+
+    if (!mounted) return;
+
+    if (paymentResult?['success'] == true) {
+      // Logic đặt chỗ thực tế
       final ok = await parkingProvider.reserve(
         widget.spot.id,
         _selectedVehicleId!,
       );
 
+      if (!mounted) return;
+
       if (ok) {
-        transactions.addTransaction(
-          TransactionRecord(
-            id: txId.toString(),
-            amount: amount,
-            date: DateTime.now(),
-            method: 'cash',
-            status: 'completed',
-          ),
+        // Tạo bản ghi giao dịch
+        final newTx = TransactionRecord(
+          id: paymentResult!['transactionId'] as String,
+          amount: amount,
+          date: DateTime.now(),
+          method: 'online', 
+          status: 'Hoàn tất',
         );
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Đặt chỗ và thanh toán thành công')),
-          );
-          Navigator.of(context).pop(true);
-        }
+        transactions.addTransaction(newTx);
+        
+        // SỬA: Dùng GoRouter context.pop để quay lại và trả về kết quả (true)
+        context.pop(true);
       } else {
-        if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('Đặt chỗ thất bại')));
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Lỗi: $e')));
-      }
-    } finally {
-      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Lỗi: Đặt chỗ không thành công')),
+        );
         setState(() => _processing = false);
       }
+    } else {
+      // Thanh toán không thành công
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Thanh toán đã bị hủy hoặc thất bại')),
+      );
+      setState(() => _processing = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final vehicles = Provider.of<VehiclesProvider>(context).vehicles;
-
     return Scaffold(
       appBar: AppBar(title: const Text('Đặt chỗ')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              widget.spot.name,
+              'Bãi đỗ: ${widget.spot.name}',
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 8),
-            Text('Giá: ${widget.spot.pricePerHour}/giờ'),
             const SizedBox(height: 12),
-            const Text('Chọn xe của bạn'),
-            const SizedBox(height: 8),
-            DropdownButton<String>(
-              value: _selectedVehicleId,
+            Text('Giá: ${widget.spot.pricePerHour} VND / giờ'),
+            const SizedBox(height: 16),
+            const Text('Chọn xe:'),
+            DropdownButtonFormField<String>(
+              initialValue: _selectedVehicleId,
               items: vehicles
                   .map(
-                    (v) => DropdownMenuItem(
+                    (v) => DropdownMenuItem<String>(
                       value: v.id,
                       child: Text('${v.plate} — ${v.model}'),
                     ),
                   )
                   .toList(),
               onChanged: (v) => setState(() => _selectedVehicleId = v),
+              decoration: const InputDecoration(border: OutlineInputBorder()),
             ),
             const SizedBox(height: 12),
             Row(

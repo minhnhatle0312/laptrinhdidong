@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import '../providers/parking_provider.dart';
-import 'reservation_screen.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -13,14 +13,33 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
-  final mapController = MapController();
+  late MapController mapController;
 
   @override
   void initState() {
     super.initState();
+    mapController = MapController();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<ParkingProvider>(context, listen: false).loadSpots();
     });
+  }
+
+  @override
+  void dispose() {
+    mapController.dispose();
+    super.dispose();
+  }
+
+  void _onMarkerTapped(dynamic spot) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${spot.name} - ${spot.isAvailable ? 'Trống' : 'Đã đặt'}'),
+        action: SnackBarAction(
+          label: 'Đặt chỗ',
+          onPressed: () => context.go('/reserve', extra: spot),
+        ),
+      ),
+    );
   }
 
   @override
@@ -32,69 +51,39 @@ class _MapScreenState extends State<MapScreen> {
       appBar: AppBar(title: const Text('Bản đồ bãi xe')),
       body: FlutterMap(
         mapController: mapController,
-        options: MapOptions(center: LatLng(10.776530, 106.700981), zoom: 13),
+        options: MapOptions(
+          center: LatLng(10.776530, 106.700981),
+          zoom: 13.0,
+        ),
         children: [
           TileLayer(
             urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
             subdomains: const ['a', 'b', 'c'],
           ),
-          MarkerLayer(
-            markers: spots.map((s) {
-              return Marker(
-                width: 80,
-                height: 80,
-                point: LatLng(s.lat, s.lng),
-                builder: (ctx) => GestureDetector(
-                  onTap: () {
-                    showModalBottomSheet(
-                      context: context,
-                      builder: (_) => Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              s.name,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Trạng thái: ${s.isAvailable ? 'Trống' : 'Đã đặt'}',
-                            ),
-                            const SizedBox(height: 8),
-                            Text('Giá: ${s.pricePerHour}/giờ'),
-                            const SizedBox(height: 12),
-                            ElevatedButton(
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) => ReservationScreen(spot: s),
-                                  ),
-                                );
-                              },
-                              child: const Text('Đặt chỗ'),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                  child: Icon(
-                    Icons.location_on,
-                    color: s.isAvailable ? Colors.green : Colors.red,
-                    size: 36,
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
+          if (spots.isNotEmpty)
+            MarkerLayer(
+              markers: _buildMarkers(spots),
+            ),
         ],
       ),
     );
+  }
+
+  List<Marker> _buildMarkers(List<dynamic> spots) {
+    return spots.map<Marker>((spot) {
+      return Marker(
+        point: LatLng(spot.lat as double, spot.lng as double),
+        width: 40,
+        height: 40,
+        builder: (ctx) => GestureDetector(
+          onTap: () => _onMarkerTapped(spot),
+          child: Icon(
+            Icons.location_on,
+            color: spot.isAvailable == true ? Colors.green : Colors.red,
+            size: 36,
+          ),
+        ),
+      );
+    }).toList();
   }
 }

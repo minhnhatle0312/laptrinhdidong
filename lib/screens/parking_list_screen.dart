@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart'; // THÊM IMPORT
 import '../providers/parking_provider.dart';
 import '../widgets/parking_card.dart';
-import 'reservation_screen.dart';
+// import 'reservation_screen.dart'; // Không cần nữa
 
 class ParkingListScreen extends StatefulWidget {
   const ParkingListScreen({super.key});
@@ -47,8 +48,9 @@ class _ParkingListScreenState extends State<ParkingListScreen> {
                     padding: const EdgeInsets.all(12.0),
                     child: TextField(
                       decoration: const InputDecoration(
+                        labelText: 'Tìm kiếm bãi xe...',
                         prefixIcon: Icon(Icons.search),
-                        hintText: 'Tìm kiếm bãi xe...',
+                        border: OutlineInputBorder(),
                       ),
                       onChanged: (v) => setState(() => _query = v),
                     ),
@@ -62,13 +64,14 @@ class _ParkingListScreenState extends State<ParkingListScreen> {
                         return ParkingCard(
                           spot: spot,
                           onReserve: () async {
-                            // navigate to reservation screen to complete flow
                             final messenger = ScaffoldMessenger.of(context);
-                            final res = await Navigator.of(context).push<bool>(
-                              MaterialPageRoute(
-                                builder: (_) => ReservationScreen(spot: spot),
-                              ),
+                            
+                            // SỬA: Dùng GoRouter context.push để điều hướng và chờ kết quả
+                            final res = await context.push<bool>(
+                              '/reserve',
+                              extra: spot, // Truyền ParkingSpot qua extra
                             );
+                            
                             if (!mounted) return;
                             if (res == true) {
                               messenger.showSnackBar(

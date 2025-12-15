@@ -1,17 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 import 'router.dart';
-
-// Imports cho Providers và Services
+import 'firebase_options.dart';
 import 'providers/providers.dart';
-import 'services/api_service.dart'; 
+import 'services/api_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // If you want to initialize Firebase, uncomment and configure Firebase options
-  // await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // Initialize Firebase
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } catch (e) {
+    debugPrint('Firebase initialization error: $e');
+  }
 
   runApp(const MyApp());
 }
@@ -24,19 +30,17 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Create instances lazily if not provided (useful for tests)
     final apiLocal = api ?? ApiService();
     final settingsLocal = settings ?? SettingsProvider(apiLocal);
 
-    // If settings was not provided externally, try to load saved config
     if (settings == null) {
-      // Fire-and-forget load (will notify listeners when complete)
       Future.microtask(() => settingsLocal.load());
     }
 
     return MultiProvider(
       providers: [
         ChangeNotifierProvider<SettingsProvider>.value(value: settingsLocal),
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(
           create: (_) => ParkingProvider(apiService: apiLocal),
         ),

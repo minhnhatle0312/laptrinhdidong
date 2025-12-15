@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart'; // THÊM IMPORT
 
 class PaymentScreen extends StatefulWidget {
   final double amount;
@@ -10,15 +11,16 @@ class PaymentScreen extends StatefulWidget {
 }
 
 class _PaymentScreenState extends State<PaymentScreen> {
-  String _method = 'cash';
+  String _method = 'card'; 
   bool _processing = false;
 
   Future<void> _pay() async {
     setState(() => _processing = true);
-    await Future.delayed(const Duration(seconds: 1));
+    await Future.delayed(const Duration(seconds: 1)); // Giả lập thanh toán
     if (!mounted) return;
-    setState(() => _processing = false);
-    Navigator.of(context).pop({
+    
+    // SỬA: Dùng GoRouter context.pop để trả về kết quả thành công
+    context.pop({
       'success': true,
       'transactionId': 'tx_${DateTime.now().millisecondsSinceEpoch}',
     });
@@ -38,13 +40,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
+            const Text('Phương thức thanh toán:'),
             DropdownButton<String>(
               value: _method,
               items: const [
-                DropdownMenuItem(value: 'cash', child: Text('Tiền mặt (Cash)')),
                 DropdownMenuItem(value: 'card', child: Text('Thẻ (Card)')),
+                DropdownMenuItem(value: 'online', child: Text('Online (VNPay/Momo)')),
               ],
-              onChanged: (v) => setState(() => _method = v ?? 'cash'),
+              onChanged: (v) => setState(() => _method = v ?? 'card'),
             ),
             const SizedBox(height: 24),
             SizedBox(
@@ -53,7 +56,16 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 onPressed: _processing ? null : _pay,
                 child: _processing
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('Thanh toán'),
+                    : const Text('Xác nhận Thanh toán'),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                // Trả về false khi Hủy giao dịch
+                onPressed: _processing ? null : () => context.pop({'success': false}), 
+                child: const Text('Hủy'),
               ),
             ),
           ],
