@@ -5,6 +5,7 @@ import '../providers/dashboard_provider.dart';
 import '../providers/repair_tickets_provider.dart';
 import '../providers/services_provider.dart';
 import '../providers/staff_provider.dart';
+import '../widgets/revenue_bar_chart.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -23,10 +24,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   Future<void> _loadAdminData() async {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<DashboardProvider>().loadAdminStats();
-      context.read<ServicesProvider>().loadServices();
-      context.read<StaffProvider>().loadStaff();
-      // Đảm bảo tải tất cả phiếu cho Admin để thống kê
+      // Disable Firebase loads for now to prevent hanging
+      // context.read<DashboardProvider>().loadAdminStats();
+      // context.read<ServicesProvider>().loadServices();
+      // context.read<StaffProvider>().loadStaff();
+      // Ensure all tickets are loaded for Admin statistics
       context.read<RepairTicketsProvider>().loadAllTickets(); 
     });
     // Return a small delay so callers (RefreshIndicator) receive a Future
@@ -246,6 +248,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         },
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Revenue Bar Chart (sample data for now)
+                  Text(
+                    'Biểu đồ doanh thu 6 tháng',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 12),
+                  RevenueBarChart(
+                    monthlyRevenue: const [32000000, 25000000, 28000000, 30000000, 27000000, 35000000],
+                    months: const ['1', '2', '3', '4', '5', '6'],
                   ),
                   const SizedBox(height: 24),
 

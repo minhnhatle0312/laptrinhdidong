@@ -85,7 +85,7 @@ class _PartsManagementScreenState extends State<PartsManagementScreen> {
               if (!formKey.currentState!.validate()) return;
               
               final newPart = Part(
-                id: isEditing ? existingPart!.id : '', 
+                id: isEditing ? existingPart.id : '',
                 name: nameCtrl.text.trim(),
                 sku: skuCtrl.text.trim(),
                 costPrice: double.parse(costPriceCtrl.text.trim()),

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import '../../models/RepairTicket.dart';
-import '../../models/Part.dart';
+
 import '../../models/PartUsage.dart';
 import '../../models/Staff.dart';
 import '../../providers/repair_tickets_provider.dart';
@@ -89,8 +89,8 @@ class RepairTicketDetailScreen extends StatelessWidget {
             _buildSectionHeader(context, 'Dịch vụ Yêu cầu'),
             ...ticket.serviceIds.map((id) => Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Text('- ${id}'), // TODO: Cần tra cứu tên dịch vụ từ ServicesProvider
-            )).toList(),
+              child: Text('- $id'), // TODO: Cần tra cứu tên dịch vụ từ ServicesProvider
+            )),
             const SizedBox(height: 20),
 
             // --- 4. Quản lý Phụ tùng ---
@@ -182,14 +182,14 @@ class RepairTicketDetailScreen extends StatelessWidget {
           return AlertDialog(
             title: Text('Phân công Phiếu #${ticket.id}'),
             content: DropdownButtonFormField<String>(
-              value: selectedStaffId,
+              initialValue: selectedStaffId,
               decoration: const InputDecoration(labelText: 'Chọn Kỹ thuật viên'),
               items: [
                 const DropdownMenuItem(value: null, child: Text('Chưa phân công')),
                 ...assignableStaff.map((s) => DropdownMenuItem(
                   value: s.id,
                   child: Text('${s.name} (${s.specialization})'),
-                )).toList(),
+                )),
               ],
               onChanged: (v) => setState(() => selectedStaffId = v),
             ),
@@ -237,7 +237,7 @@ class RepairTicketDetailScreen extends StatelessWidget {
               children: [
                 DropdownButtonFormField<String>(
                   decoration: const InputDecoration(labelText: 'Phụ tùng'),
-                  value: selectedPartId,
+                  initialValue: selectedPartId,
                   items: availableParts.map((p) => DropdownMenuItem(
                     value: p.id,
                     child: Text('${p.name} (${p.sellingPrice.toStringAsFixed(0)}đ) - Tồn: ${p.stockQuantity}'),
@@ -313,7 +313,7 @@ class RepairTicketDetailScreen extends StatelessWidget {
               // TODO: Cho phép xóa mục phụ tùng đã thêm
             },
           ),
-        )).toList(),
+        )),
         const SizedBox(height: 16),
         SizedBox(
           width: double.infinity,

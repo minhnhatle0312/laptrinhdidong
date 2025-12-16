@@ -1,3 +1,4 @@
+import 'screens/map_parking_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -24,6 +25,7 @@ import 'screens/customers_management_screen.dart';
 import 'screens/management/staff_management_screen.dart'; 
 import 'screens/services_management_screen.dart';
 import 'screens/parking_management_screen.dart';
+import 'screens/expenses_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/login',
@@ -78,6 +80,10 @@ final appRouter = GoRouter(
     GoRoute(path: '/manage/customers', builder: (context, state) => const CustomersManagementScreen()),
     GoRoute(path: '/manage/staff', builder: (context, state) => const StaffManagementScreen()),
     GoRoute(path: '/manage/services', builder: (context, state) => const ServicesManagementScreen()),
+    GoRoute(path: '/manage/expenses', builder: (context, state) => const ExpensesScreen()),
+    GoRoute(path: '/manage/parts', builder: (context, state) => Scaffold(appBar: AppBar(title: const Text('Quản lý Phụ tùng')), body: Center(child: Text('Phụ tùng - Đang phát triển...')))),
+    GoRoute(path: '/manage/reports', builder: (context, state) => Scaffold(appBar: AppBar(title: const Text('Báo cáo')), body: Center(child: Text('Báo cáo - Đang phát triển...')))),
     GoRoute(path: '/manage/parking', builder: (context, state) => const ParkingLocationsManagementScreen()),
+    GoRoute(path: '/map-parking', builder: (context, state) => const MapParkingScreen()),
   ],
 );

@@ -1,9 +1,9 @@
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/customer.dart';
 
 class CustomersProvider extends ChangeNotifier {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final _database = FirebaseDatabase.instance.ref().child('customers');
   final List<Customer> _customers = [];
   bool isLoading = false;
 
@@ -14,19 +14,22 @@ class CustomersProvider extends ChangeNotifier {
     isLoading = true;
     notifyListeners();
     try {
-      final snapshot = await _firestore.collection('customers').get();
+      final snapshot = await _database.get();
       _customers.clear();
-      for (var doc in snapshot.docs) {
-        final raw = Map<String, dynamic>.from(doc.data());
-        // Normalize field names (support both 'name' and 'name_customer' formats)
-        final data = <String, dynamic>{
-          'id': doc.id,
-          'name': raw['name'] ?? raw['name_customer'] ?? '',
-          'phone': raw['phone'] ?? raw['phone_customer'] ?? '',
-          'address': raw['address'] ?? raw['address_customer'] ?? '',
-          'email': raw['email'] ?? raw['email_customer'] ?? '',
-        };
-        _customers.add(Customer.fromJson(data));
+      if (snapshot.exists) {
+        final customersMap = Map<String, dynamic>.from(snapshot.value as Map);
+        customersMap.forEach((key, value) {
+          final raw = Map<String, dynamic>.from(value);
+          // Normalize field names (support both 'name' and 'name_customer' formats)
+          final data = <String, dynamic>{
+            'id': key,
+            'name': raw['name'] ?? raw['name_customer'] ?? '',
+            'phone': raw['phone'] ?? raw['phone_customer'] ?? '',
+            'address': raw['address'] ?? raw['address_customer'] ?? '',
+            'email': raw['email'] ?? raw['email_customer'] ?? '',
+          };
+          _customers.add(Customer.fromJson(data));
+        });
       }
     } catch (e) {
       debugPrint('Error loading customers: $e');
@@ -35,23 +38,21 @@ class CustomersProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // SỬA: Không cần truyền ID khi tạo mới, Firestore sẽ tự tạo ID
   Future<void> addCustomer(Customer c) async {
     isLoading = true;
     notifyListeners();
     try {
-      // SỬA: Sử dụng collection.add() để Firestore tự động tạo ID
-      final docRef = await _firestore.collection('customers').add({
+      final newRef = _database.push();
+      await newRef.set({
         'name_customer': c.name,
         'phone_customer': c.phone,
         'address_customer': c.address,
         'email_customer': c.email,
-        'createdAt': FieldValue.serverTimestamp(),
+        'createdAt': DateTime.now().toIso8601String(),
       });
       
-      // Thêm Customer vào danh sách local với ID mới được tạo
       final newCustomer = Customer(
-        id: docRef.id,
+        id: newRef.key!,
         name: c.name,
         phone: c.phone,
         address: c.address,
@@ -67,16 +68,12 @@ class CustomersProvider extends ChangeNotifier {
 
   Future<void> updateCustomer(Customer c) async {
     try {
-      // Cập nhật tài liệu Firestore bằng ID đã có
-      await _firestore.collection('customers').doc(c.id).set(
-        {
-          'name_customer': c.name,
-          'phone_customer': c.phone,
-          'address_customer': c.address,
-          'email_customer': c.email,
-        },
-        SetOptions(merge: true),
-      );
+      await _database.child(c.id).update({
+        'name_customer': c.name,
+        'phone_customer': c.phone,
+        'address_customer': c.address,
+        'email_customer': c.email,
+      });
       
       final idx = _customers.indexWhere((x) => x.id == c.id);
       if (idx >= 0) _customers[idx] = c;
@@ -88,7 +85,7 @@ class CustomersProvider extends ChangeNotifier {
 
   Future<void> deleteCustomer(String id) async {
     try {
-      await _firestore.collection('customers').doc(id).delete();
+      await _database.child(id).remove();
       _customers.removeWhere((c) => c.id == id);
       notifyListeners();
     } catch (e) {

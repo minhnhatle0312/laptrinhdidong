@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart'; // THÊM IMPORT
 import '../providers/auth_provider.dart';
 import '../providers/dashboard_provider.dart';
 import '../providers/repair_tickets_provider.dart';
+import '../widgets/revenue_bar_chart.dart';
 
 class UserDashboardScreen extends StatefulWidget {
   const UserDashboardScreen({super.key});
@@ -26,7 +27,8 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
 
     if (authProvider.currentUser != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        dashboardProvider.loadUserStats(authProvider.currentUser!.uid);
+        // Disable Firebase loads for now to prevent hanging
+        // dashboardProvider.loadUserStats(authProvider.currentUser!.uid);
         repairTicketsProvider.loadCustomerTickets(); 
       });
     }
@@ -270,6 +272,18 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                           Colors.red,
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Revenue Bar Chart (sample data for now)
+                    Text(
+                      'Biểu đồ doanh thu 6 tháng',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 12),
+                    RevenueBarChart(
+                      monthlyRevenue: const [12000000, 15000000, 10000000, 18000000, 17000000, 21000000],
+                      months: const ['1', '2', '3', '4', '5', '6'],
                     ),
                     const SizedBox(height: 24),
 

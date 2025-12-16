@@ -30,57 +30,26 @@ class TransactionsScreen extends StatelessWidget {
     final txs = txProv.transactions;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Lịch sử Giao dịch')),
+      appBar: AppBar(
+        title: const Text('Giao dịch'),
+      ),
       body: txs.isEmpty
-          ? const Center(child: Text('Chưa có giao dịch'))
+          ? const Center(child: Text('Không có giao dịch nào'))
           : ListView.builder(
-              padding: const EdgeInsets.all(12),
               itemCount: txs.length,
               itemBuilder: (context, index) {
-                final t = txs[index];
+                final transaction = txs[index];
                 return Card(
-                  elevation: 2,
-                  margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+                  margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   child: ListTile(
-                    leading: Icon(
-                      Icons.receipt_long,
-                      color: Theme.of(context).colorScheme.secondary,
-                    ),
-                    title: Text(
-                      'Mã giao dịch: ${t.id}',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Phương thức: ${t.method}', style: const TextStyle(fontSize: 12)),
-                        Text(
-                          'Trạng thái: ${t.status}',
-                          style: TextStyle(
-                            color: _getStatusColor(t.status),
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                    trailing: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          '${t.amount.toStringAsFixed(0)} đ',
-                          style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.indigo),
-                        ),
-                        Text(
-                          '${t.date.day}/${t.date.month}/${t.date.year}',
-                          style: const TextStyle(fontSize: 10, color: Colors.grey),
-                        ),
-                      ],
-                    ),
-                    onTap: () {
-                      // TODO: Điều hướng đến chi tiết giao dịch
-                    },
+                    title: Text('Giao dịch - ${transaction.method}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: Text('${transaction.amount} VNĐ'),
+                    trailing: Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[600]),
+                    onTap: () {},
+                    hoverColor: Colors.teal.withOpacity(0.08),
+                    splashColor: Colors.teal.withOpacity(0.15),
                   ),
                 );
               },

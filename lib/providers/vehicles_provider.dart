@@ -1,10 +1,10 @@
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/vehicle.dart';
 import '../services/api_service.dart';
 
 class VehiclesProvider extends ChangeNotifier {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final _database = FirebaseDatabase.instance.ref().child('vehicles');
   final ApiService api;
   final List<Vehicle> _vehicles = [];
   bool isLoading = false;
@@ -20,12 +20,15 @@ class VehiclesProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final snapshot = await _firestore.collection('vehicles').get();
+      final snapshot = await _database.get();
       _vehicles.clear();
-      for (var doc in snapshot.docs) {
-        final data = Map<String, dynamic>.from(doc.data());
-        data['id'] = doc.id;
-        _vehicles.add(Vehicle.fromJson(data));
+      if (snapshot.exists) {
+        final vehiclesMap = Map<String, dynamic>.from(snapshot.value as Map);
+        vehiclesMap.forEach((key, value) {
+          final data = Map<String, dynamic>.from(value);
+          data['id'] = key;
+          _vehicles.add(Vehicle.fromJson(data));
+        });
       }
     } catch (e) {
       errorMessage = e.toString();
@@ -40,11 +43,12 @@ class VehiclesProvider extends ChangeNotifier {
     try {
       final docId = v.id.isEmpty ? '' : v.id;
       if (docId.isEmpty) {
-        final doc = await _firestore.collection('vehicles').add(v.toJson());
-        final newV = Vehicle.fromJson({...v.toJson(), 'id': doc.id});
+        final newRef = _database.push();
+        await newRef.set(v.toJson());
+        final newV = Vehicle.fromJson({...v.toJson(), 'id': newRef.key!});
         _vehicles.insert(0, newV);
       } else {
-        await _firestore.collection('vehicles').doc(docId).set(v.toJson());
+        await _database.child(docId).set(v.toJson());
         _vehicles.insert(0, v);
       }
       notifyListeners();
@@ -60,7 +64,7 @@ class VehiclesProvider extends ChangeNotifier {
   Future<bool> updateVehicle(Vehicle v) async {
     try {
       if (v.id.isNotEmpty) {
-        await _firestore.collection('vehicles').doc(v.id).set(v.toJson(), SetOptions(merge: true));
+        await _database.child(v.id).update(v.toJson());
       }
       final idx = _vehicles.indexWhere((x) => x.id == v.id);
       if (idx >= 0) _vehicles[idx] = v;
@@ -76,7 +80,7 @@ class VehiclesProvider extends ChangeNotifier {
   Future<bool> deleteVehicle(String id) async {
     try {
       if (id.isNotEmpty) {
-        await _firestore.collection('vehicles').doc(id).delete();
+        await _database.child(id).remove();
       }
       _vehicles.removeWhere((v) => v.id == id);
       notifyListeners();

@@ -43,7 +43,7 @@ class _PaymentsHistoryScreenState extends State<PaymentsHistoryScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Lịch sử Thanh toán'),
+        title: const Text('Lịch sử thanh toán'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -61,8 +61,9 @@ class _PaymentsHistoryScreenState extends State<PaymentsHistoryScreen> {
                   itemBuilder: (context, index) {
                     final p = provider.payments[index];
                     return Card(
-                      elevation: 2,
-                      margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      elevation: 4,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       child: ListTile(
                         leading: Icon(
                           Icons.credit_card,
@@ -100,6 +101,8 @@ class _PaymentsHistoryScreenState extends State<PaymentsHistoryScreen> {
                         onTap: () {
                           // TODO: Điều hướng đến chi tiết thanh toán
                         },
+                        hoverColor: Colors.deepPurple.withOpacity(0.08),
+                        splashColor: Colors.deepPurple.withOpacity(0.15),
                       ),
                     );
                   },

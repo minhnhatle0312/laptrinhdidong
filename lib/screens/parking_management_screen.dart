@@ -96,7 +96,7 @@ class _ParkingLocationsManagementScreenState
               if (!formKey.currentState!.validate()) return;
               
               final newSpot = ParkingSpot(
-                id: isEditing ? existing!.id : DateTime.now().millisecondsSinceEpoch.toString(),
+                id: isEditing ? existing.id : DateTime.now().millisecondsSinceEpoch.toString(),
                 name: nameCtrl.text.trim(),
                 lat: double.parse(latCtrl.text.trim()),
                 lng: double.parse(lngCtrl.text.trim()),
@@ -116,13 +116,11 @@ class _ParkingLocationsManagementScreenState
 
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(
-                    'Đã ${isEditing ? 'cập nhật' : 'thêm'} bãi đỗ: ${newSpot.name}',
-                  ),
+                  content: Text('Đã ${isEditing ? 'cập nhật' : 'thêm'} bãi đỗ: ${newSpot.name}'),
                 ),
               );
             },
-            child: Text(isEditing ? 'Lưu' : 'Thêm'),
+            child: const Text('Lưu'),
           ),
         ],
       ),
@@ -146,7 +144,6 @@ class _ParkingLocationsManagementScreenState
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () async {
               Navigator.pop(ctx);
-              // SỬA: Gọi hàm delete thực tế
               await provider.deleteParkingSpot(spot.id);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(

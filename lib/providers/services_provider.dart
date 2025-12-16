@@ -1,9 +1,9 @@
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/Service.dart';
 
 class ServicesProvider extends ChangeNotifier {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final _database = FirebaseDatabase.instance.ref().child('services');
   
   List<Service> _services = [];
   bool _isLoading = false;
@@ -20,10 +20,16 @@ class ServicesProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final snapshot = await _firestore.collection('services').get();
-      _services = snapshot.docs
-          .map((doc) => Service.fromJson({...doc.data(), 'id': doc.id}))
-          .toList();
+      final snapshot = await _database.get();
+      _services = [];
+      if (snapshot.exists) {
+        final servicesMap = Map<String, dynamic>.from(snapshot.value as Map);
+        servicesMap.forEach((key, value) {
+          final data = Map<String, dynamic>.from(value);
+          data['id'] = key;
+          _services.add(Service.fromJson(data));
+        });
+      }
       _isLoading = false;
       notifyListeners();
     } catch (e) {
@@ -37,11 +43,12 @@ class ServicesProvider extends ChangeNotifier {
   Future<bool> createService(Service service) async {
     try {
       if (service.id.isEmpty) {
-        final docRef = await _firestore.collection('services').add(service.toJson());
-        final newService = Service.fromJson({...service.toJson(), 'id': docRef.id});
+        final newRef = _database.push();
+        await newRef.set(service.toJson());
+        final newService = Service.fromJson({...service.toJson(), 'id': newRef.key!});
         _services.insert(0, newService);
       } else {
-        await _firestore.collection('services').doc(service.id).set(service.toJson());
+        await _database.child(service.id).set(service.toJson());
         _services.add(service);
       }
       notifyListeners();
@@ -56,7 +63,7 @@ class ServicesProvider extends ChangeNotifier {
   /// Update service (Admin only)
   Future<bool> updateService(Service service) async {
     try {
-      await _firestore.collection('services').doc(service.id).update(service.toJson());
+      await _database.child(service.id).update(service.toJson());
       final index = _services.indexWhere((s) => s.id == service.id);
       if (index >= 0) {
         _services[index] = service;
@@ -73,7 +80,7 @@ class ServicesProvider extends ChangeNotifier {
   /// Delete service (Admin only)
   Future<bool> deleteService(String serviceId) async {
     try {
-      await _firestore.collection('services').doc(serviceId).delete();
+      await _database.child(serviceId).remove();
       _services.removeWhere((s) => s.id == serviceId);
       notifyListeners();
       return true;

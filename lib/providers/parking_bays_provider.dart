@@ -1,9 +1,9 @@
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/ParkingBay.dart';
 
 class ParkingBaysProvider extends ChangeNotifier {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final _database = FirebaseDatabase.instance.ref().child('parking_bays');
   
   List<ParkingBay> _bays = [];
   bool _isLoading = false;
@@ -20,13 +20,19 @@ class ParkingBaysProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final snapshot = await _firestore
-          .collection('parking_bays')
-          .where('isActive', isEqualTo: true)
-          .get();
-      _bays = snapshot.docs
-          .map((doc) => ParkingBay.fromJson({...doc.data(), 'id': doc.id}))
-          .toList();
+      final snapshot = await _database.get();
+      _bays = [];
+      if (snapshot.exists) {
+        final baysMap = Map<String, dynamic>.from(snapshot.value as Map);
+        baysMap.forEach((key, value) {
+          final data = Map<String, dynamic>.from(value);
+          data['id'] = key;
+          // Only load active bays
+          if (data['isActive'] != false) {
+            _bays.add(ParkingBay.fromJson(data));
+          }
+        });
+      }
       _isLoading = false;
       notifyListeners();
     } catch (e) {
@@ -39,7 +45,7 @@ class ParkingBaysProvider extends ChangeNotifier {
   /// Create parking bay (Admin)
   Future<bool> createBay(ParkingBay bay) async {
     try {
-      await _firestore.collection('parking_bays').doc(bay.id).set(bay.toJson());
+      await _database.child(bay.id).set(bay.toJson());
       _bays.add(bay);
       notifyListeners();
       return true;
@@ -53,7 +59,7 @@ class ParkingBaysProvider extends ChangeNotifier {
   /// Update parking bay (Admin)
   Future<bool> updateBay(ParkingBay bay) async {
     try {
-      await _firestore.collection('parking_bays').doc(bay.id).update(bay.toJson());
+      await _database.child(bay.id).update(bay.toJson());
       final index = _bays.indexWhere((b) => b.id == bay.id);
       if (index >= 0) {
         _bays[index] = bay;
@@ -70,7 +76,7 @@ class ParkingBaysProvider extends ChangeNotifier {
   /// Delete parking bay (Admin)
   Future<bool> deleteBay(String bayId) async {
     try {
-      await _firestore.collection('parking_bays').doc(bayId).update({'isActive': false});
+      await _database.child(bayId).update({'isActive': false});
       _bays.removeWhere((b) => b.id == bayId);
       notifyListeners();
       return true;
@@ -86,7 +92,7 @@ class ParkingBaysProvider extends ChangeNotifier {
     try {
       final bay = _bays.firstWhere((b) => b.id == bayId);
       final newAvailable = (bay.availableSpots + change).clamp(0, bay.totalSpots);
-      await _firestore.collection('parking_bays').doc(bayId).update({
+      await _database.child(bayId).update({
         'availableSpots': newAvailable,
       });
       final index = _bays.indexWhere((b) => b.id == bayId);

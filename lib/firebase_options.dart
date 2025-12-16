@@ -47,6 +47,7 @@ class DefaultFirebaseOptions {
     projectId: 'quanlyxe-f18f4',
     authDomain: 'quanlyxe-f18f4.firebaseapp.com',
     storageBucket: 'quanlyxe-f18f4.firebasestorage.app',
+    databaseURL: 'https://quanlyxe-f18f4.firebaseio.com',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
@@ -55,6 +56,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '886807399906',
     projectId: 'quanlyxe-f18f4',
     storageBucket: 'quanlyxe-f18f4.firebasestorage.app',
+    databaseURL: 'https://quanlyxe-f18f4.firebaseio.com',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
@@ -63,6 +65,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '886807399906',
     projectId: 'quanlyxe-f18f4',
     storageBucket: 'quanlyxe-f18f4.firebasestorage.app',
+    databaseURL: 'https://quanlyxe-f18f4.firebaseio.com',
     iosBundleId: 'com.example.flutterApplication',
   );
 
@@ -72,6 +75,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '886807399906',
     projectId: 'quanlyxe-f18f4',
     storageBucket: 'quanlyxe-f18f4.firebasestorage.app',
+    databaseURL: 'https://quanlyxe-f18f4.firebaseio.com',
     iosBundleId: 'com.example.flutterApplication',
   );
 
@@ -82,5 +86,6 @@ class DefaultFirebaseOptions {
     projectId: 'quanlyxe-f18f4',
     authDomain: 'quanlyxe-f18f4.firebaseapp.com',
     storageBucket: 'quanlyxe-f18f4.firebasestorage.app',
+    databaseURL: 'https://quanlyxe-f18f4.firebaseio.com',
   );
 }

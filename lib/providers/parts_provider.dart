@@ -1,11 +1,11 @@
 // providers/parts_provider.dart
 
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/Part.dart';
 
 class PartsProvider extends ChangeNotifier {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final _database = FirebaseDatabase.instance.ref().child('parts');
   final List<Part> _parts = [];
   bool _isLoading = false;
   String? _errorMessage;
@@ -14,7 +14,7 @@ class PartsProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
-  // Lấy phụ tùng theo ID
+  // Get part by ID
   Part? getPartById(String id) {
     try {
       return _parts.firstWhere((p) => p.id == id);
@@ -23,32 +23,38 @@ class PartsProvider extends ChangeNotifier {
     }
   }
 
-  /// Tải tất cả phụ tùng (bao gồm logic mock nếu cần)
+  /// Load all parts
   Future<void> loadParts() async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
     try {
-      final snapshot = await _firestore.collection('parts').where('isActive', isEqualTo: true).get();
+      final snapshot = await _database.get();
       _parts.clear();
-      for (var doc in snapshot.docs) {
-        final data = Map<String, dynamic>.from(doc.data());
-        data['id'] = doc.id;
-        _parts.add(Part.fromJson(data));
+      if (snapshot.exists) {
+        final partsMap = Map<String, dynamic>.from(snapshot.value as Map);
+        partsMap.forEach((key, value) {
+          final data = Map<String, dynamic>.from(value);
+          data['id'] = key;
+          // Only load active parts
+          if (data['isActive'] != false) {
+            _parts.add(Part.fromJson(data));
+          }
+        });
       }
       if (_parts.isEmpty) {
-        _mockLoadParts(); // Nếu Firebase trống, tải mock data
+        _mockLoadParts(); // If Realtime DB is empty, load mock data
       }
     } catch (e) {
       _errorMessage = e.toString();
-      _mockLoadParts(); // Tải mock khi có lỗi kết nối
-      debugPrint('Error loading parts from Firestore: $e');
+      _mockLoadParts(); // Load mock data on error
+      debugPrint('Error loading parts from Firebase: $e');
     }
     _isLoading = false;
     notifyListeners();
   }
 
-  // Logic mock data (Dùng khi Firebase trống hoặc lỗi)
+  // Mock data logic
   void _mockLoadParts() {
     if (_parts.isNotEmpty) return;
     _parts.addAll([
@@ -64,11 +70,12 @@ class PartsProvider extends ChangeNotifier {
     ]);
   }
 
-  /// Tạo phụ tùng mới
+  /// Create new part
   Future<bool> createPart(Part part) async {
     try {
-      final docRef = await _firestore.collection('parts').add(part.toJson());
-      final newPart = part.copyWith(id: docRef.id);
+      final newRef = _database.push();
+      await newRef.set(part.toJson());
+      final newPart = part.copyWith(id: newRef.key!);
       _parts.insert(0, newPart);
       notifyListeners();
       return true;
@@ -79,10 +86,10 @@ class PartsProvider extends ChangeNotifier {
     }
   }
 
-  /// Cập nhật phụ tùng
+  /// Update part
   Future<bool> updatePart(Part part) async {
     try {
-      await _firestore.collection('parts').doc(part.id).set(part.toJson(), SetOptions(merge: true));
+      await _database.child(part.id).update(part.toJson());
       final index = _parts.indexWhere((p) => p.id == part.id);
       if (index >= 0) {
         _parts[index] = part;
@@ -96,10 +103,10 @@ class PartsProvider extends ChangeNotifier {
     }
   }
   
-  /// Xóa phụ tùng (Đặt isActive = false)
+  /// Delete part (soft delete)
   Future<bool> deletePart(String partId) async {
     try {
-      await _firestore.collection('parts').doc(partId).update({'isActive': false});
+      await _database.child(partId).update({'isActive': false});
       _parts.removeWhere((p) => p.id == partId);
       notifyListeners();
       return true;
@@ -110,7 +117,7 @@ class PartsProvider extends ChangeNotifier {
     }
   }
   
-  /// Điều chỉnh tồn kho (dùng sau khi sửa chữa/nhập hàng)
+  /// Adjust stock
   Future<bool> adjustStock(String partId, int quantityChange) async {
     final part = getPartById(partId);
     if (part == null) return false;
@@ -118,6 +125,6 @@ class PartsProvider extends ChangeNotifier {
     final newStock = part.stockQuantity + quantityChange;
     final updatedPart = part.copyWith(stockQuantity: newStock);
     
-    return updatePart(updatedPart); // Sử dụng hàm updatePart đã có
+    return updatePart(updatedPart);
   }
 }

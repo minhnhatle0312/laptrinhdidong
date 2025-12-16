@@ -85,7 +85,7 @@ class _CustomersManagementScreenState extends State<CustomersManagementScreen> {
 
               final Customer customerData = Customer(
                 // SỬA: Nếu đang sửa, giữ nguyên ID; nếu thêm mới, dùng ID rỗng
-                id: isEditing ? existingCustomer!.id : '', 
+                id: isEditing ? existingCustomer.id : '',
                 name: nameCtrl.text.trim(),
                 phone: phoneCtrl.text.trim(),
                 email: emailCtrl.text.trim(),

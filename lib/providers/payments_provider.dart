@@ -1,9 +1,9 @@
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/Payment.dart';
 
 class PaymentsProvider extends ChangeNotifier {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final _database = FirebaseDatabase.instance.ref().child('payments');
   
   List<Payment> _payments = [];
   List<Payment> _customerPayments = [];
@@ -22,13 +22,20 @@ class PaymentsProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final snapshot = await _firestore
-          .collection('payments')
-          .orderBy('createdAt', descending: true)
-          .get();
-      _payments = snapshot.docs
-          .map((doc) => Payment.fromJson({...doc.data(), 'id': doc.id}))
-          .toList();
+      final snapshot = await _database.get();
+      _payments = [];
+      if (snapshot.exists) {
+        final paymentsMap = Map<String, dynamic>.from(snapshot.value as Map);
+        final paymentsList = <Payment>[];
+        paymentsMap.forEach((key, value) {
+          final data = Map<String, dynamic>.from(value);
+          data['id'] = key;
+          paymentsList.add(Payment.fromJson(data));
+        });
+        // Sort by createdAt descending
+        paymentsList.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        _payments = paymentsList;
+      }
       _isLoading = false;
       notifyListeners();
     } catch (e) {
@@ -48,14 +55,20 @@ class PaymentsProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final snapshot = await _firestore
-          .collection('payments')
-          .where('customerId', isEqualTo: customerId)
-          .orderBy('createdAt', descending: true)
-          .get();
-      _customerPayments = snapshot.docs
-          .map((doc) => Payment.fromJson({...doc.data(), 'id': doc.id}))
-          .toList();
+      final snapshot = await _database.orderByChild('customerId').equalTo(customerId).get();
+      _customerPayments = [];
+      if (snapshot.exists) {
+        final paymentsMap = Map<String, dynamic>.from(snapshot.value as Map);
+        final paymentsList = <Payment>[];
+        paymentsMap.forEach((key, value) {
+          final data = Map<String, dynamic>.from(value);
+          data['id'] = key;
+          paymentsList.add(Payment.fromJson(data));
+        });
+        // Sort by createdAt descending
+        paymentsList.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        _customerPayments = paymentsList;
+      }
       _isLoading = false;
       notifyListeners();
     } catch (e) {
@@ -68,7 +81,7 @@ class PaymentsProvider extends ChangeNotifier {
   /// Create payment
   Future<bool> createPayment(Payment payment) async {
     try {
-      await _firestore.collection('payments').doc(payment.id).set(payment.toJson());
+      await _database.child(payment.id).set(payment.toJson());
       _payments.add(payment);
       _customerPayments.add(payment);
       notifyListeners();
@@ -86,10 +99,10 @@ class PaymentsProvider extends ChangeNotifier {
       final now = DateTime.now();
       final updateData = {
         'status': status,
-        if (status == 'success') 'paidAt': now,
+        if (status == 'success') 'paidAt': now.toIso8601String(),
       };
       
-      await _firestore.collection('payments').doc(paymentId).update(updateData);
+      await _database.child(paymentId).update(updateData);
       
       // Update local state
       final index = _payments.indexWhere((p) => p.id == paymentId);
@@ -141,13 +154,15 @@ class PaymentsProvider extends ChangeNotifier {
   /// Get payment by ticket
   Future<Payment?> getPaymentByTicket(String ticketId) async {
     try {
-      final snapshot = await _firestore
-          .collection('payments')
-          .where('ticketId', isEqualTo: ticketId)
-          .limit(1)
-          .get();
-      if (snapshot.docs.isNotEmpty) {
-        return Payment.fromJson({...snapshot.docs[0].data(), 'id': snapshot.docs[0].id});
+      final snapshot = await _database.orderByChild('ticketId').equalTo(ticketId).get();
+      if (snapshot.exists) {
+        final paymentsMap = Map<String, dynamic>.from(snapshot.value as Map);
+        if (paymentsMap.isNotEmpty) {
+          final firstKey = paymentsMap.keys.first;
+          final data = Map<String, dynamic>.from(paymentsMap[firstKey]);
+          data['id'] = firstKey;
+          return Payment.fromJson(data);
+        }
       }
       return null;
     } catch (e) {

@@ -12,3 +12,5 @@ export 'parking_bays_provider.dart';
 export 'staff_provider.dart';
 export 'dashboard_provider.dart';
 export 'customers_provider.dart';
+
+export 'expenses_provider.dart';

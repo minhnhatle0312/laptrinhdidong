@@ -1,9 +1,9 @@
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/Staff.dart';
 
 class StaffProvider extends ChangeNotifier {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final _database = FirebaseDatabase.instance.ref().child('staff');
   final List<Staff> _staff = [];
   bool _isLoading = false;
   String? _errorMessage;
@@ -17,19 +17,25 @@ class StaffProvider extends ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
     try {
-      final snapshot = await _firestore.collection('staff').get();
+      final snapshot = await _database.get();
       _staff.clear();
-      for (var doc in snapshot.docs) {
-        final data = Map<String, dynamic>.from(doc.data());
-        data['id'] = doc.id;
-        // Sử dụng logic chuyển đổi an toàn cho DateTime
-        data['joinedAt'] = data['joinedAt'] is Timestamp 
-          ? (data['joinedAt'] as Timestamp).toDate()
-          : (data['joinedAt'] is String 
-              ? DateTime.parse(data['joinedAt'] as String) 
-              : DateTime.now());
-        _staff.add(Staff.fromJson(data));
+      if (snapshot.exists) {
+        final staffMap = Map<String, dynamic>.from(snapshot.value as Map);
+        staffMap.forEach((key, value) {
+          final data = Map<String, dynamic>.from(value);
+          data['id'] = key;
+          // Convert joinedAt string to DateTime
+          if (data['joinedAt'] is String) {
+            data['joinedAt'] = DateTime.parse(data['joinedAt'] as String);
+          } else {
+            data['joinedAt'] = DateTime.now();
+          }
+          _staff.add(Staff.fromJson(data));
+        });
+        // Sort by joinedAt descending
+        _staff.sort((a, b) => b.joinedAt.compareTo(a.joinedAt));
       }
+      notifyListeners();
     } catch (e) {
       _errorMessage = e.toString();
       debugPrint('Error loading staff: $e');
@@ -38,25 +44,24 @@ class StaffProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Sửa: Sử dụng collection.add() để Firestore tự động tạo ID
   Future<bool> createStaff(Staff s) async {
     _isLoading = true;
     notifyListeners();
     try {
-      final docRef = await _firestore.collection('staff').add({
+      final newRef = _database.push();
+      await newRef.set({
         'name': s.name,
         'position': s.position,
         'email': s.email,
         'phone': s.phone,
         'specialization': s.specialization,
         'isActive': s.isActive,
-        'joinedAt': FieldValue.serverTimestamp(), // Sử dụng server timestamp
+        'joinedAt': DateTime.now().toIso8601String(),
         'photoUrl': s.photoUrl,
       });
       
-      // Thêm nhân viên vào danh sách local với ID và timestamp mới
       final newStaff = Staff(
-        id: docRef.id,
+        id: newRef.key!,
         name: s.name,
         email: s.email,
         phone: s.phone,
@@ -81,7 +86,11 @@ class StaffProvider extends ChangeNotifier {
   /// Update staff (Admin)
   Future<bool> updateStaff(Staff staffMember) async {
     try {
-      await _firestore.collection('staff').doc(staffMember.id).update(staffMember.toJson());
+      final data = staffMember.toJson();
+      if (data.containsKey('joinedAt') && data['joinedAt'] is DateTime) {
+        data['joinedAt'] = (data['joinedAt'] as DateTime).toIso8601String();
+      }
+      await _database.child(staffMember.id).update(data);
       final index = _staff.indexWhere((s) => s.id == staffMember.id);
       if (index >= 0) {
         _staff[index] = staffMember;
@@ -98,7 +107,7 @@ class StaffProvider extends ChangeNotifier {
   /// Delete staff (Admin) - soft delete
   Future<bool> deleteStaff(String staffId) async {
     try {
-      await _firestore.collection('staff').doc(staffId).update({'isActive': false});
+      await _database.child(staffId).update({'isActive': false});
       _staff.removeWhere((s) => s.id == staffId);
       notifyListeners();
       return true;

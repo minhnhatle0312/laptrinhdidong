@@ -57,7 +57,7 @@ class _ServicesManagementScreenState extends State<ServicesManagementScreen> {
                     prefixText: 'đ ',
                   ),
                   keyboardType: TextInputType.number,
-                  validator: (v) => v?.isEmpty ?? true || double.tryParse(v!) == null ? 'Vui lòng nhập giá hợp lệ' : null,
+                  validator: (v) => (v?.isEmpty ?? true) || double.tryParse(v!) == null ? 'Vui lòng nhập giá hợp lệ' : null,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
@@ -67,7 +67,7 @@ class _ServicesManagementScreenState extends State<ServicesManagementScreen> {
                     suffixText: 'phút',
                   ),
                   keyboardType: TextInputType.number,
-                  validator: (v) => v?.isEmpty ?? true || int.tryParse(v!) == null ? 'Vui lòng nhập thời gian hợp lệ' : null,
+                  validator: (v) => (v?.isEmpty ?? true) || int.tryParse(v!) == null ? 'Vui lòng nhập thời gian hợp lệ' : null,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(
@@ -89,7 +89,7 @@ class _ServicesManagementScreenState extends State<ServicesManagementScreen> {
               if (!formKey.currentState!.validate()) return;
 
               final Service serviceData = Service(
-                id: isEditing ? existingService!.id : '', // Firestore sẽ tạo ID nếu là thêm mới
+                id: isEditing ? existingService.id : '', // Firestore sẽ tạo ID nếu là thêm mới
                 name: nameCtrl.text.trim(),
                 price: double.parse(priceCtrl.text.trim()),
                 durationMinutes: int.parse(durationCtrl.text.trim()),

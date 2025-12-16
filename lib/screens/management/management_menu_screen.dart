@@ -116,6 +116,20 @@ class ManagementMenuScreen extends StatelessWidget {
             ),
             _buildManagementCard(
               context,
+              title: 'Bản đồ bãi giữ xe',
+              icon: Icons.map,
+              route: '/map-parking',
+              color: Colors.lightBlueAccent,
+            ),
+            _buildManagementCard(
+              context,
+              title: 'Báo cáo chi tiêu',
+              icon: Icons.money_off,
+              route: '/manage/expenses',
+              color: Colors.pink,
+            ),
+            _buildManagementCard(
+              context,
               title: 'Báo cáo',
               icon: Icons.analytics,
               route: '/manage', // Tạm thời quay lại menu
