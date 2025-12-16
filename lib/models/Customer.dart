@@ -1,5 +1,3 @@
-// ignore_for_file: file_names, non_constant_identifier_names
-
 class Customer {
   final String id;
   final String name;
@@ -17,21 +15,21 @@ class Customer {
 
   factory Customer.fromJson(Map<String, dynamic> json) {
     return Customer(
-      id: json['id_customer'] ?? json['id'] ?? '',
-      name: json['name_customer'] ?? json['name'] ?? '',
-      phone: json['phone_customer'] ?? json['phone'] ?? '',
-      address: json['address_customer'] ?? json['address'] ?? '',
-      email: json['email_customer'] ?? json['email'] ?? '',
+      id: json['id'] ?? '',
+      name: json['name'] ?? '',
+      phone: json['phone'] ?? '',
+      address: json['address'] ?? '',
+      email: json['email'] ?? '',
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'id_customer': id,
-      'name_customer': name,
-      'phone_customer': phone,
-      'address_customer': address,
-      'email_customer': email,
+      'id': id,
+      'name': name,
+      'phone': phone,
+      'address': address,
+      'email': email,
     };
   }
 }

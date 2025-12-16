@@ -5,6 +5,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'router.dart';
 import 'firebase_options.dart';
 import 'providers/providers.dart';
+import 'theme.dart';
 import 'services/api_service.dart';
 import 'utils/firebase_init_sample_data.dart';
 
@@ -43,7 +44,7 @@ class MyApp extends StatelessWidget {
     if (settings == null) {
       Future.microtask(() => settingsLocal.load());
     }
-
+    
     return MultiProvider(
       providers: [
         ChangeNotifierProvider<SettingsProvider>.value(value: settingsLocal),
@@ -51,24 +52,24 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) => ParkingProvider(apiService: apiLocal),
         ),
-        ChangeNotifierProvider(create: (_) => VehiclesProvider()),
-        ChangeNotifierProvider(create: (_) => TransactionsProvider()),
-      ],
-      child: MaterialApp.router(
-        title: 'Quản lý Gara & Bãi xe',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          primarySwatch: Colors.indigo,
-          useMaterial3: true,
-          appBarTheme: const AppBarTheme(
-            backgroundColor: Colors.indigo,
-            foregroundColor: Colors.white,
-            centerTitle: false,
-            elevation: 1,
-          ),
+        ChangeNotifierProvider(
+          create: (_) => VehiclesProvider(apiService: apiLocal), 
         ),
-        routerConfig: appRouter,
-      ),
+        ChangeNotifierProvider(create: (_) => TransactionsProvider()),
+        ChangeNotifierProvider(create: (_) => ServicesProvider()),
+        ChangeNotifierProvider(create: (_) => RepairTicketsProvider()),
+        ChangeNotifierProvider(create: (_) => PaymentsProvider()),
+        ChangeNotifierProvider(create: (_) => ParkingBaysProvider()),
+        ChangeNotifierProvider(create: (_) => StaffProvider()),
+        ChangeNotifierProvider(create: (_) => CustomersProvider()),
+        ChangeNotifierProvider(create: (_) => DashboardProvider()),
+      ],
+        child: MaterialApp.router(
+          title: 'Quản lý Gara & Bãi xe',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.lightTheme(),
+          routerConfig: appRouter,
+        ),
     );
   }
 }

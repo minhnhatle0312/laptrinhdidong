@@ -63,23 +63,59 @@ class AuthService {
   /// Login as demo user (for testing)
   Future<String?> loginAsDemo() async {
     try {
-      await _auth.signInWithEmailAndPassword(
-        email: 'test@test.com',
-        password: '123456',
-      );
-      return null; // Success
-    } on FirebaseAuthException catch (e) {
-      if (e.code == 'user-not-found') {
-        // Create demo user if not exists
-        return await registerWithEmailAndPassword(
+      // First, try to sign in with existing account
+      try {
+        await _auth.signInWithEmailAndPassword(
           email: 'test@test.com',
           password: '123456',
-          fullName: 'Demo User',
         );
+        return null; // Success
+      } on FirebaseAuthException catch (loginError) {
+        // If login fails for any reason, try to create the account
+        if (loginError.code == 'user-not-found' ||
+            loginError.code == 'wrong-password' ||
+            loginError.code == 'invalid-email') {
+          // Try to create the demo user
+          try {
+            await _auth.createUserWithEmailAndPassword(
+              email: 'test@test.com',
+              password: '123456',
+            );
+            
+            // Store user info in Firestore
+            User? newUser = _auth.currentUser;
+            if (newUser != null) {
+              await _firestore.collection('users').doc(newUser.uid).set({
+                'uid': newUser.uid,
+                'email': 'test@test.com',
+                'fullName': 'Demo User',
+                'createdAt': DateTime.now(),
+                'role': 'user',
+              });
+              await newUser.updateDisplayName('Demo User');
+            }
+            
+            return null; // Success - account created
+          } on FirebaseAuthException catch (createError) {
+            // If account already exists (collision), try login again
+            if (createError.code == 'email-already-in-use') {
+              try {
+                await _auth.signInWithEmailAndPassword(
+                  email: 'test@test.com',
+                  password: '123456',
+                );
+                return null; // Success on second attempt
+              } catch (e) {
+                return 'Demo account exists but password is incorrect. Try email login: test@test.com / 123456';
+              }
+            }
+            return createError.message ?? 'Failed to create demo account';
+          }
+        }
+        return loginError.message ?? 'Demo login failed';
       }
-      return e.message ?? 'Demo login failed';
     } catch (e) {
-      return 'An unexpected error occurred';
+      return 'An unexpected error occurred: $e';
     }
   }
 

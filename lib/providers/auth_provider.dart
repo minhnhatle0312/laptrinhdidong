@@ -6,6 +6,8 @@ class AuthProvider extends ChangeNotifier {
   final AuthService _authService = AuthService();
   
   User? _currentUser;
+  Map<String, dynamic>? _userProfile;
+  String? _userRole;
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -16,6 +18,8 @@ class AuthProvider extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   String? get userEmail => currentUser?.email;
   String? get displayName => currentUser?.displayName;
+  Map<String, dynamic>? get userProfile => _userProfile;
+  String? get userRole => _userRole;
 
   AuthProvider() {
     _initializeAuth();
@@ -25,6 +29,17 @@ class AuthProvider extends ChangeNotifier {
   void _initializeAuth() {
     _authService.authStateChanges.listen((User? user) {
       _currentUser = user;
+      if (user != null) {
+        // Load Firestore profile including role
+        _authService.getUserData(user.uid).then((profile) {
+          _userProfile = profile;
+          _userRole = profile != null && profile['role'] != null ? profile['role'] as String : null;
+          notifyListeners();
+        });
+      } else {
+        _userProfile = null;
+        _userRole = null;
+      }
       notifyListeners();
     });
   }
@@ -86,6 +101,14 @@ class AuthProvider extends ChangeNotifier {
         return false;
       }
 
+      // After successful sign-in, load Firestore profile synchronously
+      final user = _authService.currentUser;
+      if (user != null) {
+        final profile = await _authService.getUserData(user.uid);
+        _userProfile = profile;
+        _userRole = profile != null && profile['role'] != null ? profile['role'] as String : null;
+      }
+
       _isLoading = false;
       notifyListeners();
       return true;
@@ -111,6 +134,14 @@ class AuthProvider extends ChangeNotifier {
         _isLoading = false;
         notifyListeners();
         return false;
+      }
+
+      // Load profile after demo sign-in
+      final user = _authService.currentUser;
+      if (user != null) {
+        final profile = await _authService.getUserData(user.uid);
+        _userProfile = profile;
+        _userRole = profile != null && profile['role'] != null ? profile['role'] as String : null;
       }
 
       _isLoading = false;

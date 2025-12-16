@@ -1,17 +1,70 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../widgets/animated_scaffold.dart';
 
 class ManagementMenuScreen extends StatelessWidget {
   const ManagementMenuScreen({super.key});
 
+  // Tối ưu hóa UI: Thẻ nổi bật hơn với BoxShadow và màu sắc động
+  Widget _buildManagementCard(
+    BuildContext context, {
+    required String title,
+    required IconData icon,
+    required String route,
+    required Color color, // THÊM THAM SỐ MÀU SẮC
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.15),
+            spreadRadius: 1,
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: InkWell(
+        onTap: () => context.go(route),
+        borderRadius: BorderRadius.circular(15),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(icon, size: 48, color: color),
+              const SizedBox(height: 12),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold, 
+                  fontSize: 16,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Quản lý chi tiết',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Menu Quản lý'),
-        // Loại bỏ nút Back vì đây là điểm gốc của ShellRoute item 2
-        automaticallyImplyLeading: false, 
-      ),
+    return AnimatedScaffold(
+      title: 'Menu Quản lý',
+      automaticallyImplyLeading: false,
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: GridView.count(
@@ -23,54 +76,50 @@ class ManagementMenuScreen extends StatelessWidget {
               context,
               title: 'Quản lý Xe',
               icon: Icons.directions_car,
-              route: '/manage/cars',
+              route: '/manage/vehicles',
+              color: Colors.indigo,
             ),
             _buildManagementCard(
               context,
               title: 'Quản lý Khách hàng',
               icon: Icons.people,
               route: '/manage/customers',
+              color: Colors.blue,
             ),
             _buildManagementCard(
               context,
               title: 'Quản lý Nhân viên',
               icon: Icons.engineering,
               route: '/manage/staff',
+              color: Colors.orange,
             ),
             _buildManagementCard(
               context,
               title: 'Quản lý Dịch vụ',
               icon: Icons.miscellaneous_services,
               route: '/manage/services',
+              color: Colors.green,
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildManagementCard(
-    BuildContext context, {
-    required String title,
-    required IconData icon,
-    required String route,
-  }) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: InkWell(
-        // Dùng context.go để thay thế màn hình trong ShellRoute
-        onTap: () => context.go(route), 
-        borderRadius: BorderRadius.circular(12),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 50, color: Theme.of(context).primaryColor),
-            const SizedBox(height: 10),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            _buildManagementCard( // THÊM MỚI
+              context,
+              title: 'Quản lý Phụ tùng',
+              icon: Icons.inventory_2,
+              route: '/manage/parts', 
+              color: Colors.brown,
+            ),
+            _buildManagementCard(
+              context,
+              title: 'Quản lý Bãi đỗ',
+              icon: Icons.location_on,
+              route: '/manage/parking',
+              color: Colors.teal,
+            ),
+            _buildManagementCard(
+              context,
+              title: 'Báo cáo',
+              icon: Icons.analytics,
+              route: '/manage', // Tạm thời quay lại menu
+              color: Colors.red,
             ),
           ],
         ),

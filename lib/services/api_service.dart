@@ -5,8 +5,8 @@ import 'package:http/http.dart' as http;
 import '../models/parking_spot.dart';
 import '../models/reservation.dart';
 import '../models/vehicle.dart';
-import '../models/Customer.dart'; // THÊM IMPORT ĐỂ KHÔNG BÁO LỖI CustomersProvider
-import '../models/Staff.dart'; // THÊM IMPORT ĐỂ KHÔNG BÁO LỖI StaffProvider
+import '../models/customer.dart';
+import '../models/Staff.dart';
 
 class ApiService {
   String baseUrl = '';
@@ -72,7 +72,6 @@ class ApiService {
     return true; 
   }
 
-
   // -----------------------------------------------------------------
   // 3. CRUD STAFF (THÊM MỚI)
   // -----------------------------------------------------------------
@@ -80,8 +79,26 @@ class ApiService {
     if (baseUrl.isEmpty) {
       await Future.delayed(const Duration(milliseconds: 500));
       return [
-        Staff(id: 's1', name: 'Lê Văn C', position: 'Quản lý', email: 'c@mail.com'),
-        Staff(id: 's2', name: 'Phạm Thị D', position: 'Kỹ thuật', email: 'd@mail.com'),
+        Staff(
+          id: 's1',
+          name: 'Lê Văn C',
+          position: 'manager',
+          email: 'c@mail.com',
+          phone: '0901234561',
+          specialization: 'management',
+          isActive: true,
+          joinedAt: DateTime.now().subtract(const Duration(days: 365)),
+        ),
+        Staff(
+          id: 's2',
+          name: 'Phạm Thị D',
+          position: 'mechanic',
+          email: 'd@mail.com',
+          phone: '0901234562',
+          specialization: 'engine',
+          isActive: true,
+          joinedAt: DateTime.now().subtract(const Duration(days: 180)),
+        ),
       ];
     }
     // TODO: Triển khai API call thực tế (sử dụng http.get)
@@ -212,6 +229,62 @@ class ApiService {
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
       return true; // Mock success on error
+    }
+  }
+
+  // -----------------------------------------------------------------
+  // Parking spot management (create/update/delete) - mock implementations
+  // -----------------------------------------------------------------
+  Future<bool> createParkingSpot(ParkingSpot spot) async {
+    if (baseUrl.isEmpty) {
+      await Future.delayed(const Duration(milliseconds: 200));
+      return true;
+    }
+
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/parking-spots'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(spot.toJson()),
+      );
+      return response.statusCode == 200 || response.statusCode == 201;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<bool> updateParkingSpot(ParkingSpot spot) async {
+    if (baseUrl.isEmpty) {
+      await Future.delayed(const Duration(milliseconds: 200));
+      return true;
+    }
+
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/parking-spots/${spot.id}'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(spot.toJson()),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<bool> deleteParkingSpot(String id) async {
+    if (baseUrl.isEmpty) {
+      await Future.delayed(const Duration(milliseconds: 200));
+      return true;
+    }
+
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/parking-spots/$id'),
+        headers: {'Content-Type': 'application/json'},
+      );
+      return response.statusCode == 200 || response.statusCode == 204;
+    } catch (e) {
+      return false;
     }
   }
 

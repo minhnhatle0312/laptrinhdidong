@@ -1,59 +1,90 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/vehicle.dart';
-import '../services/api_service.dart'; // THÊM IMPORT
+import '../services/api_service.dart';
 
 class VehiclesProvider extends ChangeNotifier {
-  // THÊM: Biến ApiService và isLoading
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final ApiService api;
-  List<Vehicle> _vehicles = [];
+  final List<Vehicle> _vehicles = [];
   bool isLoading = false;
+  String? errorMessage;
 
-  // CẬP NHẬT: Constructor nhận ApiService
-  VehiclesProvider({ApiService? apiService}) 
-      : api = apiService ?? ApiService() {
-    // Thử tải dữ liệu từ API, nếu lỗi sẽ dùng mock data
-    // Nếu bạn muốn giữ mock data khi baseUrl rỗng, giữ nguyên logic sau:
-    if (api.baseUrl.isEmpty) {
-       _vehicles = [
-          Vehicle(
-            id: 'v1',
-            plate: '51A-123.45',
-            model: 'Toyota Vios',
-            ownerName: 'Nguyễn A',
-          ),
-          Vehicle(
-            id: 'v2',
-            plate: '29B-987.65',
-            model: 'Honda City',
-            ownerName: 'Trần B',
-          ),
-        ];
-    }
-  }
+  VehiclesProvider({ApiService? apiService}) : api = apiService ?? ApiService();
 
   List<Vehicle> get vehicles => List.unmodifiable(_vehicles);
 
-  // THÊM: Phương thức tải dữ liệu từ API
   Future<void> loadVehicles() async {
     if (isLoading) return;
     isLoading = true;
     notifyListeners();
 
     try {
-      _vehicles = await api.fetchVehicles();
+      final snapshot = await _firestore.collection('vehicles').get();
+      _vehicles.clear();
+      for (var doc in snapshot.docs) {
+        final data = Map<String, dynamic>.from(doc.data());
+        data['id'] = doc.id;
+        _vehicles.add(Vehicle.fromJson(data));
+      }
     } catch (e) {
-      // Xử lý lỗi nếu cần
-      _vehicles = [];
+      errorMessage = e.toString();
+      _vehicles.clear();
     }
 
     isLoading = false;
     notifyListeners();
   }
 
-  // CẬP NHẬT: addVehicle (Chỉ là mock logic, cần thêm gọi API thực tế)
-  void addVehicle(Vehicle v) {
-    _vehicles.add(v);
-    // TODO: Cần thêm logic gọi api.addVehicle(v) sau này
-    notifyListeners();
+  Future<bool> addVehicle(Vehicle v) async {
+    try {
+      final docId = v.id.isEmpty ? '' : v.id;
+      if (docId.isEmpty) {
+        final doc = await _firestore.collection('vehicles').add(v.toJson());
+        final newV = Vehicle.fromJson({...v.toJson(), 'id': doc.id});
+        _vehicles.insert(0, newV);
+      } else {
+        await _firestore.collection('vehicles').doc(docId).set(v.toJson());
+        _vehicles.insert(0, v);
+      }
+      notifyListeners();
+      return true;
+    } catch (e) {
+      errorMessage = e.toString();
+      _vehicles.add(v);
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> updateVehicle(Vehicle v) async {
+    try {
+      if (v.id.isNotEmpty) {
+        await _firestore.collection('vehicles').doc(v.id).set(v.toJson(), SetOptions(merge: true));
+      }
+      final idx = _vehicles.indexWhere((x) => x.id == v.id);
+      if (idx >= 0) _vehicles[idx] = v;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      errorMessage = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> deleteVehicle(String id) async {
+    try {
+      if (id.isNotEmpty) {
+        await _firestore.collection('vehicles').doc(id).delete();
+      }
+      _vehicles.removeWhere((v) => v.id == id);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      errorMessage = e.toString();
+      notifyListeners();
+      return false;
+    }
   }
 }
