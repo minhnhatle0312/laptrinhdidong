@@ -130,6 +130,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
               context.push('/task-assignments');
             },
           ),
+          ListTile(
+            leading: const Icon(Icons.map_outlined, color: Colors.blue),
+            title: const Text('Bản đồ kho bãi'),
+            onTap: () {
+              Navigator.of(context).pop(); // Đóng menu
+              context.push('/map');        // Chuyển sang trang Map
+            },
+          ),
         ],
       ),
     );

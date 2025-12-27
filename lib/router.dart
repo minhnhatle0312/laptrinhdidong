@@ -25,6 +25,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_application/models/product.dart';
 import 'package:flutter_application/screens/inventory/product_list_screen.dart';
 import 'package:flutter_application/screens/inventory/product_form_screen.dart';
+import 'package:flutter_application/screens/map/garage_map_screen.dart';
 
 GoRouter createRouter() {
   return GoRouter(
@@ -131,6 +132,10 @@ GoRouter createRouter() {
           final product = state.extra as Product?;
           return ProductFormScreen(product: product);
         },
+      ),
+      GoRoute(
+        path: '/map',
+        builder: (context, state) => const GarageMapScreen(),
       ),
     ],
   );

@@ -140,45 +140,34 @@ class CustomerFormUI extends StatelessWidget {
 
           const SizedBox(height: 32),
           
-          // Action Buttons
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () => _handleSave(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 2,
-                  ),
-                  child: const Text('Lưu', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          // Action Buttons - ĐÃ SỬA: Chỉ giữ lại 1 nút Lưu chính
+          SizedBox(
+            width: double.infinity, // Kéo dài nút ra toàn chiều ngang
+            child: ElevatedButton(
+              onPressed: () => _handleSave(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
+                elevation: 4, // Tăng độ nổi một chút cho đẹp
+                shadowColor: Colors.blue.withOpacity(0.4),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () => _handleSaveAndContinue(context),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    side: const BorderSide(color: Colors.blue),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text('Lưu & Thêm tiếp', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.blue)),
-                ),
+              child: const Text(
+                'LƯU THÔNG TIN', // Viết hoa cho nổi bật
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1),
               ),
-            ],
+            ),
           ),
           const SizedBox(height: 40),
         ],
       ),
     );
   }
+
+  // ... (Các phần code bên dưới giữ nguyên không thay đổi) ...
 
   Widget _buildSectionTitle(String title, IconData icon) {
     return Row(
@@ -244,27 +233,14 @@ class CustomerFormUI extends StatelessWidget {
     );
   }
 
-  // Logic handlers (Giữ nguyên)
   Future<void> _handleSave(BuildContext context) async {
     await controller.save();
     if (context.mounted) {
       Navigator.of(context).pop();
-    }
-  }
-
-  Future<void> _handleSaveAndContinue(BuildContext context) async {
-    await controller.saveAndContinue();
-    if (context.mounted) {
-      final message = controller.isEdit ? 'Đã cập nhật' : 'Đã lưu thành công';
+      // Thêm thông báo snackbar khi lưu thành công (tùy chọn)
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.check_circle, color: Colors.white),
-              const SizedBox(width: 8),
-              Text(message),
-            ],
-          ),
+        const SnackBar(
+          content: Text('Đã lưu thông tin khách hàng'),
           backgroundColor: Colors.green,
           behavior: SnackBarBehavior.floating,
         ),
