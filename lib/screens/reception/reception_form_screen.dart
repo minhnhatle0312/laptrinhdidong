@@ -10,7 +10,9 @@ import 'package:flutter_application/models/customer.dart';
 import 'package:flutter_application/models/vehicle.dart';
 import 'package:flutter_application/models/staff.dart';
 import 'package:flutter_application/models/service.dart';
+import 'package:flutter_application/models/revenue.dart'; 
 
+import 'package:flutter_application/services/revenue_firestore.dart';
 import 'package:flutter_application/services/reception_firestore.dart';
 import 'package:flutter_application/services/customer_firestore.dart';
 import 'package:flutter_application/services/vehicle_firestore.dart';
@@ -51,6 +53,7 @@ class _ReceptionFormScreenState extends State<ReceptionFormScreen> {
   final ServiceFirestore _serviceService = ServiceFirestore();
   final TaskAssignmentFirestore _taskAssignmentService =
       TaskAssignmentFirestore();
+  final RevenueFirestore _revenueService = RevenueFirestore();
   final Uuid _uuid = const Uuid();
 
   @override
@@ -149,6 +152,7 @@ class _ReceptionFormScreenState extends State<ReceptionFormScreen> {
   }
 
   Future<void> _save() async {
+    // 1. Kiểm tra dữ liệu đầu vào
     if (_selectedCustomerId == null ||
         _selectedVehicleId == null ||
         _selectedStaffIds.isEmpty) {
@@ -165,9 +169,10 @@ class _ReceptionFormScreenState extends State<ReceptionFormScreen> {
       return;
     }
 
+    // 2. Chuẩn bị dữ liệu
     double totalPrice = double.tryParse(_totalPriceController.text) ?? 0.0;
-
     String id = widget.reception?.id ?? _uuid.v4();
+    
     Reception reception = Reception(
       id: id,
       customerId: _selectedCustomerId!,
@@ -180,12 +185,33 @@ class _ReceptionFormScreenState extends State<ReceptionFormScreen> {
     );
 
     try {
+      // 3. Lưu Phiếu tiếp nhận (Logic cũ)
       if (widget.reception == null) {
         await _receptionService.addReception(reception);
         await _autoCreateTasks(reception);
       } else {
         await _receptionService.updateReception(reception);
       }
+
+      // --- PHẦN MỚI THÊM: TẠO DOANH THU KHI HOÀN THÀNH ---
+      if (_selectedStatus == 'done') {
+        // Kiểm tra xem ID này đã được tính doanh thu chưa (tránh cộng dồn nhiều lần)
+        // Tuy nhiên ở mức cơ bản, ta cứ tạo mới.
+       Revenue revenue = Revenue(
+        id: _uuid.v4(),
+        receptionId: reception.id,
+        customerId: reception.customerId, // Thêm dòng này
+        vehicleId: reception.vehicleId,   // Thêm dòng này
+        staffIds: reception.staffIds,     // Thêm dòng này
+        createdAt: reception.createdAt,   // Thêm dòng này
+        totalPrice: reception.totalPrice,
+        serviceIds: reception.serviceIds,
+        completedAt: DateTime.now(),
+      );
+
+        await _revenueService.addRevenue(revenue);
+      }
+      // ---------------------------------------------------
 
       if (!mounted) return;
 
@@ -196,15 +222,16 @@ class _ReceptionFormScreenState extends State<ReceptionFormScreen> {
                 ? 'Đã tạo phiếu tiếp nhận'
                 : 'Đã cập nhật phiếu',
           ),
+          backgroundColor: Colors.green,
         ),
       );
 
-      context.pop();
+      context.pop(); // Quay lại màn hình danh sách
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Lỗi: ${e.toString()}')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi: ${e.toString()}'), backgroundColor: Colors.red),
+      );
     }
   }
 

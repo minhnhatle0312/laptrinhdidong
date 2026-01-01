@@ -20,8 +20,10 @@ import 'package:flutter_application/models/service.dart';
 import 'package:flutter_application/models/staff.dart';
 import 'package:flutter_application/models/reception.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_application/screens/vehicle/vehicle_history_screen.dart'; // Đã có import lịch sử
+import 'package:flutter_application/screens/payment/payment_screen.dart';
 
-// --- BỔ SUNG IMPORT CHO PRODUCT ---
+// --- BỔ SUNG IMPORT CHO PRODUCT & MAP ---
 import 'package:flutter_application/models/product.dart';
 import 'package:flutter_application/screens/inventory/product_list_screen.dart';
 import 'package:flutter_application/screens/inventory/product_form_screen.dart';
@@ -60,39 +62,25 @@ GoRouter createRouter() {
         builder: (context, state) =>
             VehicleFormScreen(vehicle: state.extra as Vehicle?),
       ),
+      
+      // --- ĐÃ SỬA: Xóa Scaffold bọc ngoài để tránh trùng nút ---
       GoRoute(
         path: '/customers',
-        builder: (context, state) => Scaffold(
-          appBar: AppBar(title: const Text('Khách hàng')),
-          body: const CustomerListScreen(),
-          floatingActionButton: FloatingActionButton(
-            onPressed: () => context.push('/customer_form'),
-            child: const Icon(Icons.add),
-          ),
-        ),
+        builder: (context, state) => const CustomerListScreen(),
       ),
+      
+      // --- ĐÃ SỬA: Xóa Scaffold bọc ngoài để tránh trùng nút ---
       GoRoute(
         path: '/vehicles',
-        builder: (context, state) => Scaffold(
-          appBar: AppBar(title: const Text('Phương tiện')),
-          body: const VehicleListScreen(),
-          floatingActionButton: FloatingActionButton(
-            onPressed: () => context.push('/vehicle_form'),
-            child: const Icon(Icons.add),
-          ),
-        ),
+        builder: (context, state) => const VehicleListScreen(),
       ),
+      
+      // --- ĐÃ SỬA: Xóa Scaffold bọc ngoài để tránh trùng nút ---
       GoRoute(
         path: '/receptions',
-        builder: (context, state) => Scaffold(
-          appBar: AppBar(title: const Text('Phiếu tiếp nhận')),
-          body: ReceptionListScreen(),
-          floatingActionButton: FloatingActionButton(
-            onPressed: () => context.push('/reception_form'),
-            child: const Icon(Icons.add),
-          ),
-        ),
+        builder: (context, state) => ReceptionListScreen(),
       ),
+      
       GoRoute(
         path: '/reception_form',
         builder: (context, state) =>
@@ -121,7 +109,7 @@ GoRouter createRouter() {
         },
       ),
 
-      // --- BỔ SUNG ROUTE CHO PRODUCT ---
+      // --- ROUTE CHO KHO (PRODUCT) ---
       GoRoute(
         path: '/products',
         builder: (context, state) => const ProductListScreen(),
@@ -133,9 +121,29 @@ GoRouter createRouter() {
           return ProductFormScreen(product: product);
         },
       ),
+
+      // --- ROUTE CHO BẢN ĐỒ (MAP) ---
       GoRoute(
         path: '/map',
         builder: (context, state) => const GarageMapScreen(),
+      ),
+      
+      GoRoute(
+        path: '/payment',
+        builder: (context, state) => const PaymentScreen(),
+      ),
+
+      // --- ROUTE CHO LỊCH SỬ SỬA CHỮA ---
+      GoRoute(
+        path: '/vehicle_history',
+        builder: (context, state) {
+          // Nhận dữ liệu truyền qua 'extra'
+          final args = state.extra as Map<String, dynamic>;
+          return VehicleHistoryScreen(
+            vehicleId: args['vehicleId'],
+            licensePlate: args['licensePlate'],
+          );
+        },
       ),
     ],
   );

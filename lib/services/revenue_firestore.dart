@@ -154,5 +154,8 @@ class RevenueFirestore {
     };
   }
 
-  Future<void> addRevenue(Revenue revenue) async {}
+  // --- HÀM QUAN TRỌNG ĐÃ ĐƯỢC THÊM CODE ---
+  Future<void> addRevenue(Revenue revenue) async {
+    await _collection.doc(revenue.id).set(revenue.toMap());
+  }
 }

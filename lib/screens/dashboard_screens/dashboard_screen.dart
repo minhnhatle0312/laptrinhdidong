@@ -1,3 +1,5 @@
+// File: lib/screens/dashboard_screens/dashboard_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_application/screens/services/service_list_screen.dart';
 import 'package:flutter_application/screens/staff/staff_list_screen.dart';
@@ -38,11 +40,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     return Scaffold(
       drawer: _buildDrawer(),
-      appBar: AppBar(title: Text(titles[_currentIndex])),
+      appBar: AppBar(
+        title: Text(titles[_currentIndex]),
+        // --- 1. THÊM NÚT ĐĂNG XUẤT Ở ĐÂY ---
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout, color: Colors.red),
+            tooltip: 'Đăng xuất',
+            onPressed: () => _handleLogout(context),
+          ),
+        ],
+      ),
       body: pages[_currentIndex],
-      
-      // --- ĐÃ XÓA PHẦN FLOATING ACTION BUTTON Ở ĐÂY ---
-      // Vì các màn hình con (Staff, Service) đã tự có nút thêm đẹp hơn rồi
       
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
@@ -68,7 +77,36 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // --- DRAWER ---
+  // --- HÀM XỬ LÝ ĐĂNG XUẤT ---
+  void _handleLogout(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Đăng xuất'),
+        content: const Text('Bạn có chắc muốn đăng xuất khỏi ứng dụng?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Hủy', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () {
+              Navigator.pop(ctx);
+              // Chuyển hướng về trang Login
+              context.go('/login');
+            },
+            child: const Text('Đăng xuất'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- DRAWER (MENU TRÁI) ---
   Widget _buildDrawer() {
     return Drawer(
       child: ListView(
@@ -76,9 +114,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
         children: [
           const DrawerHeader(
             decoration: BoxDecoration(color: Colors.blue),
-            child: Text(
-              'Menu Quản Lý',
-              style: TextStyle(color: Colors.white, fontSize: 18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                CircleAvatar(
+                  backgroundColor: Colors.white,
+                  radius: 30,
+                  child: Icon(Icons.garage, size: 35, color: Colors.blue),
+                ),
+                SizedBox(height: 10),
+                Text(
+                  'Menu Quản Lý',
+                  style: TextStyle(
+                    color: Colors.white, 
+                    fontSize: 20, 
+                    fontWeight: FontWeight.bold
+                  ),
+                ),
+              ],
             ),
           ),
           ListTile(
@@ -134,8 +188,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
             leading: const Icon(Icons.map_outlined, color: Colors.blue),
             title: const Text('Bản đồ kho bãi'),
             onTap: () {
-              Navigator.of(context).pop(); // Đóng menu
-              context.push('/map');        // Chuyển sang trang Map
+              Navigator.of(context).pop(); 
+              context.push('/map');        
+            },
+          ),
+          
+          // --- 2. THÊM NÚT THANH TOÁN VNPAY ---
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.payment, color: Colors.green),
+            title: const Text(
+              'Thanh toán',
+              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
+            ),
+            onTap: () {
+              Navigator.of(context).pop();
+              context.push('/payment'); // Chuyển sang màn hình thanh toán
             },
           ),
         ],
